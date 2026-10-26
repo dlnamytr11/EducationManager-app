@@ -1,6 +1,10 @@
-import { Link, useParams } from 'react-router'
-import { assignments } from '../data/assignments'
-import type { AssignmentStatus, Assignment } from '../types/assignment'
+import { Link, useNavigate, useParams } from 'react-router'
+import type { Assignment, AssignmentStatus } from '../types/assignment'
+
+type AssignmentDetailsPageProps = {
+  assignments: Assignment[]
+  onDelete: (id: string) => void
+}
 
 const statusLabels: Record<AssignmentStatus, string> = {
   not_started: 'Не начато',
@@ -14,8 +18,9 @@ const complexityLabels: Record<Assignment['complexity'], string> = {
   high: 'Высокая',
 }
 
-export function AssignmentDetailsPage() {
+export function AssignmentDetailsPage({ assignments, onDelete }: AssignmentDetailsPageProps) {
   const { id } = useParams()
+  const navigate = useNavigate()
   const assignment = assignments.find((item) => item.id === id)
 
   if (!assignment) {
@@ -36,7 +41,21 @@ export function AssignmentDetailsPage() {
       <p>Срок: {assignment.dueDate}</p>
       <p>Статус: {statusLabels[assignment.status]}</p>
       <p>Сложность: {complexityLabels[assignment.complexity]}</p>
+       <div className="assignment-actions">
+      <Link to={`/assignments/${assignment.id}/edit`}>Редактировать</Link>
       <Link to="/assignments">К списку заданий</Link>
+      <button
+        type="button"
+        onClick={() => {
+          if (window.confirm(`Удалить задание «${assignment.title}»?`)) {
+            onDelete(assignment.id)
+            navigate('/assignments', { replace: true })
+          }
+        }}
+      >
+        Удалить
+      </button>
+      </div>
     </section>
   )
 }

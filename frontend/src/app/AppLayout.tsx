@@ -9,6 +9,9 @@ export function AppLayout() {
           <NavLink to="/assignments" end>Задания</NavLink>
           <NavLink to="/assignments/new">Создать</NavLink>
         </nav>
+         <p className="storage-notice">
+          Изменения хранятся только в памяти браузера и будут потеряны при обновлении страницы.
+        </p>
       </header>
       <main><Outlet /></main>
     </div>

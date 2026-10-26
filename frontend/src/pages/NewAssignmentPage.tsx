@@ -1,11 +1,36 @@
-import { Link } from 'react-router'
+import { useNavigate } from 'react-router'
+import { AssignmentForm } from '../components/AssignmentForm'
+import type { AssignmentDraft } from '../types/assignment'
 
-export function NewAssignmentPage() {
+type NewAssignmentPageProps = {
+  onCreate: (draft: AssignmentDraft) => string
+}
+
+const emptyAssignment: AssignmentDraft = {
+  title: '',
+  description: '',
+  course: '',
+  status: 'not_started',
+  dueDate: '',
+  complexity: 'medium',
+}
+
+export function NewAssignmentPage({ onCreate }: NewAssignmentPageProps) {
+  const navigate = useNavigate()
+
+  function handleSave(draft: AssignmentDraft) {
+    const id = onCreate(draft)
+    navigate(`/assignments/${id}`)
+  }
+
   return (
     <section>
       <h1>Создание задания</h1>
-      <p>Форма создания задания появится в следующей лабораторной работе.</p>
-      <Link to="/assignments">К списку заданий</Link>
+      <AssignmentForm
+        initialValues={emptyAssignment}
+        onSave={handleSave}
+        onCancel={() => navigate('/assignments')}
+      />
     </section>
   )
 }

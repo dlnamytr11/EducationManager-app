@@ -9,3 +9,5 @@ export type Assignment = {
   dueDate: string
   complexity: 'low' | 'medium' | 'high'
 }
+
+export type AssignmentDraft = Omit<Assignment, 'id'>
