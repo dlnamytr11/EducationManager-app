@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import type { AssignmentDraft } from '../types/assignment'
+import { useCourses } from '../hooks/useCourses'
 
 type AssignmentFormProps = {
   initialValues: AssignmentDraft
@@ -11,9 +12,18 @@ type AssignmentFormProps = {
 export function AssignmentForm(props: AssignmentFormProps) {
   const [draft, setDraft] = useState(() => ({ ...props.initialValues }))
   const [error, setError] = useState('')
+  const { load, retry } = useCourses()
+  const courses = load.status === 'success' ? load.data : []
+  const selectedCourseExists = courses.some((course) => course.id === draft.course)
+  const canSave = load.status === 'success' && selectedCourseExists
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+
+     if (!canSave) {
+       setError('Дождитесь справочника и выберите доступный курс.')
+       return
+     }
 
     const title = draft.title.trim()
     if (title.length < 3 || title.length > 100) {
@@ -26,18 +36,13 @@ export function AssignmentForm(props: AssignmentFormProps) {
       return
     }
 
-    if (!draft.course.trim()) {
-      setError('Укажите курс, к которому относится задание.')
-      return
-    }
-
     if (draft.status === 'done' && !draft.description.trim()) {
       setError('Для выполненного задания укажите описание результата.')
       return
     }
 
     setError('')
-    props.onSave({ ...draft, title, course: draft.course.trim() })
+    props.onSave({ ...draft, title})
   }
 
   return (
@@ -51,12 +56,50 @@ export function AssignmentForm(props: AssignmentFormProps) {
       />
 
       <label htmlFor="assignment-course">Курс</label>
-      <input
-        id="assignment-course"
-        value={draft.course}
-        required
-        onChange={(e) => setDraft({ ...draft, course: e.target.value })}
-      />
+        <select
+          id="assignment-course"
+          value={draft.course}
+          required
+          disabled={load.status !== 'success' || courses.length === 0}
+          onChange={(e) => setDraft({ ...draft, course: e.target.value })}
+      >
+        <option value="">Выберите курс</option>
+          {draft.course !== '' && !selectedCourseExists && (
+        <option value={draft.course} disabled>
+          Текущий код: {draft.course} — выберите доступный курс
+        </option>
+      )}
+      {courses.map((course) => (
+        <option key={course.id} value={course.id}>{course.name}</option>
+      ))}
+        </select>
+
+        {load.status === 'loading' && (
+        <p role="status">Загружаем курсы…</p>
+      )}
+
+      {load.status === 'error' && (
+        <div>
+          <p role="alert">{load.message}</p>
+          <button type="button" onClick={retry}>Повторить</button>
+        </div>
+      )}
+
+      {load.status === 'success' && courses.length === 0 && (
+        <div>
+          <p role="status">Курсов пока нет. Сохранение недоступно.</p>
+          <button type="button" onClick={retry}>Повторить</button>
+        </div>
+      )}
+
+      {load.status === 'success' &&
+        courses.length > 0 &&
+        draft.course !== '' &&
+        !selectedCourseExists && (
+          <p role="alert">
+            Прежний курс не найден в справочнике. Выберите доступный.
+          </p>
+        )}
 
       <label htmlFor="assignment-description">Описание</label>
       <textarea
@@ -108,7 +151,7 @@ export function AssignmentForm(props: AssignmentFormProps) {
 
       {error && <p role="alert">{error}</p>}
 
-      <button type="submit">Сохранить</button>
+      <button type="submit" disabled={!canSave}>Сохранить</button>
       <button type="button" onClick={props.onCancel}>Отмена</button>
     </form>
   )
