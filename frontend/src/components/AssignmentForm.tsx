@@ -101,6 +101,11 @@ export function AssignmentForm(props: AssignmentFormProps) {
           </p>
         )}
 
+        <button type="button" onClick={retry}
+          disabled={load.status === 'loading'}>
+          Обновить справочник
+        </button>
+
       <label htmlFor="assignment-description">Описание</label>
       <textarea
         id="assignment-description"

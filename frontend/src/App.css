@@ -217,3 +217,32 @@ button:focus-visible {
   font-size: 0.9rem;
   color: #5c4a06;
 }
+
+button:disabled {
+  background: #c9cdd4;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+button[type="submit"]:disabled:hover {
+  background: #c9cdd4;
+}
+
+form select:disabled {
+  background: #f1f3f6;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+form [role="status"] {
+  color: #444;
+  background: #eef2f8;
+  border: 1px solid #d3dbe8;
+  border-radius: 4px;
+  padding: 8px 12px;
+  margin-top: 12px;
+}
+
+form div > button[type="button"] {
+  margin-top: 8px;
+}
