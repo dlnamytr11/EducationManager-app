@@ -1,17 +1,33 @@
 import { NavLink, Outlet } from 'react-router'
+import { supabase } from '../lib/supabase'
+import type { AuthState } from '../hooks/useAuth'
 
-export function AppLayout() {
+export function AppLayout({ auth }: { auth: AuthState }) {
+  async function handleSignOut() {
+    const { error } = await supabase.auth.signOut({ scope: 'local' })
+    if (error) console.error(error.message)
+  }
+
   return (
     <div className="app">
       <header>
         <p className="app-title">Учебный менеджер</p>
         <nav aria-label="Основная навигация">
-          <NavLink to="/assignments" end>Задания</NavLink>
-          <NavLink to="/assignments/new">Создать</NavLink>
+          {auth.status === 'authenticated' ? (
+            <>
+              <NavLink to="/assignments" end>Задания</NavLink>
+              <NavLink to="/assignments/new">Создать</NavLink>
+            </>
+          ) : (
+            <NavLink to="/auth">Вход</NavLink>
+          )}
         </nav>
-         <p className="storage-notice">
-          Изменения хранятся только в памяти браузера и будут потеряны при обновлении страницы.
-        </p>
+        {auth.status === 'authenticated' && (
+          <p>
+            {auth.session.user.email}{' '}
+            <button type="button" onClick={handleSignOut}>Выйти</button>
+          </p>
+        )}
       </header>
       <main><Outlet /></main>
     </div>

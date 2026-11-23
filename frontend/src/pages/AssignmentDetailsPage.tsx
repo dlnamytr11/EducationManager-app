@@ -1,9 +1,10 @@
+import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import type { Assignment, AssignmentStatus } from '../types/assignment'
 
 type AssignmentDetailsPageProps = {
   assignments: Assignment[]
-  onDelete: (id: string) => void
+  onDelete: (id: string) => Promise<void>
 }
 
 const statusLabels: Record<AssignmentStatus, string> = {
@@ -21,8 +22,9 @@ const complexityLabels: Record<Assignment['complexity'], string> = {
 export function AssignmentDetailsPage({ assignments, onDelete }: AssignmentDetailsPageProps) {
   const { id } = useParams()
   const navigate = useNavigate()
+  const [pending, setPending] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
   const assignment = assignments.find((item) => item.id === id)
-
   if (!assignment) {
     return (
       <section>
@@ -41,20 +43,31 @@ export function AssignmentDetailsPage({ assignments, onDelete }: AssignmentDetai
       <p>Срок: {assignment.dueDate}</p>
       <p>Статус: {statusLabels[assignment.status]}</p>
       <p>Сложность: {complexityLabels[assignment.complexity]}</p>
+
+       {deleteError && <p role="alert">{deleteError}</p>}
        <div className="assignment-actions">
-      <Link to={`/assignments/${assignment.id}/edit`}>Редактировать</Link>
-      <Link to="/assignments">К списку заданий</Link>
-      <button
-        type="button"
-        onClick={() => {
-          if (window.confirm(`Удалить задание «${assignment.title}»?`)) {
-            onDelete(assignment.id)
-            navigate('/assignments', { replace: true })
-          }
-        }}
-      >
-        Удалить
-      </button>
+        <Link to={`/assignments/${assignment.id}/edit`}>Редактировать</Link>
+        <Link to="/assignments">К списку заданий</Link>
+        <button
+          type="button"
+          disabled={pending}
+          onClick={async () => {
+            if (!window.confirm(`Удалить задание «${assignment.title}»?`)) return
+            try {
+              setPending(true)
+              setDeleteError('')
+              await onDelete(assignment.id)
+              navigate('/assignments', { replace: true })
+            } catch (err: unknown) {
+              setDeleteError(
+                err instanceof Error ? err.message : 'Не удалось удалить задание.',
+              )
+              setPending(false)
+            }
+          }}
+        >
+          {pending ? 'Удаляем…' : 'Удалить'}
+        </button>
       </div>
     </section>
   )

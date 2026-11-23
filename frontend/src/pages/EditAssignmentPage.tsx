@@ -4,7 +4,7 @@ import type { Assignment, AssignmentDraft } from '../types/assignment'
 
 type EditAssignmentPageProps = {
   assignments: Assignment[]
-  onUpdate: (id: string, draft: AssignmentDraft) => void
+  onUpdate: (id: string, draft: AssignmentDraft) => Promise<void>
 }
 
 export function EditAssignmentPage({ assignments, onUpdate }: EditAssignmentPageProps) {
@@ -36,11 +36,11 @@ export function EditAssignmentPage({ assignments, onUpdate }: EditAssignmentPage
       <AssignmentForm
         key={assignment.id}
         initialValues={initialValues}
-        onSave={(draft) => {
-          onUpdate(assignment.id, draft)
+        onSave={async (draft) => {
+          await onUpdate(assignment.id, draft)
           navigate(`/assignments/${assignment.id}`)
-        }}
-        onCancel={() => navigate(`/assignments/${assignment.id}`)}
+      }}
+          onCancel={() => navigate(`/assignments/${assignment.id}`)}
       />
     </section>
   )

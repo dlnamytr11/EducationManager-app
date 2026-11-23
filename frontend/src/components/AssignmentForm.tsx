@@ -5,45 +5,58 @@ import { useCourses } from '../hooks/useCourses'
 
 type AssignmentFormProps = {
   initialValues: AssignmentDraft
-  onSave: (draft: AssignmentDraft) => void
+  onSave: (draft: AssignmentDraft) => Promise<void>
   onCancel: () => void
 }
 
 export function AssignmentForm(props: AssignmentFormProps) {
   const [draft, setDraft] = useState(() => ({ ...props.initialValues }))
   const [error, setError] = useState('')
+  const [pending, setPending] = useState(false)
+  const [submitError, setSubmitError] = useState('')
   const { load, retry } = useCourses()
   const courses = load.status === 'success' ? load.data : []
   const selectedCourseExists = courses.some((course) => course.id === draft.course)
   const canSave = load.status === 'success' && selectedCourseExists
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  event.preventDefault()
+  if (pending) return
 
-     if (!canSave) {
-       setError('Дождитесь справочника и выберите доступный курс.')
-       return
-     }
-
-    const title = draft.title.trim()
-    if (title.length < 3 || title.length > 100) {
-      setError('Название должно содержать от 3 до 100 символов.')
-      return
-    }
-
-    if (!draft.dueDate) {
-      setError('Укажите срок задания.')
-      return
-    }
-
-    if (draft.status === 'done' && !draft.description.trim()) {
-      setError('Для выполненного задания укажите описание результата.')
-      return
-    }
-
-    setError('')
-    props.onSave({ ...draft, title})
+  if (!canSave) {
+    setError('Дождитесь справочника и выберите доступный курс.')
+    return
   }
+
+  const title = draft.title.trim()
+  if (title.length < 3 || title.length > 100) {
+    setError('Название должно содержать от 3 до 100 символов.')
+    return
+  }
+
+  if (!draft.dueDate) {
+    setError('Укажите срок задания.')
+    return
+  }
+
+  if (draft.status === 'done' && !draft.description.trim()) {
+    setError('Для выполненного задания укажите описание результата.')
+    return
+  }
+
+  setError('')
+  try {
+    setPending(true)
+    setSubmitError('')
+    await props.onSave({ ...draft, title })
+  } catch (err: unknown) {
+    setSubmitError(
+      err instanceof Error ? err.message : 'Не удалось сохранить запись.',
+    )
+  } finally {
+    setPending(false)
+  }
+}
 
   return (
     <form onSubmit={handleSubmit} noValidate>
@@ -155,9 +168,14 @@ export function AssignmentForm(props: AssignmentFormProps) {
       </select>
 
       {error && <p role="alert">{error}</p>}
+      {submitError && <p role="alert">{submitError}</p>}
 
-      <button type="submit" disabled={!canSave}>Сохранить</button>
-      <button type="button" onClick={props.onCancel}>Отмена</button>
+      <button type="submit" disabled={!canSave || pending}>
+        {pending ? 'Сохраняем…' : 'Сохранить'}
+      </button>
+      <button type="button" onClick={props.onCancel} disabled={pending}>
+        Отмена
+      </button>
     </form>
   )
 }
